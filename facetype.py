@@ -79,20 +79,17 @@ class Prototype:
                 inp = tf.layers.max_pooling2d(inputs=inp, pool_size=[2, 2], strides=2)
 
         b, h, w, c = get_shape(inp)
-        inp = tf.layers.conv2d(inp, n_classes, kernel_size=1, padding='valid')  # h,w,10
-        dropout = tf.layers.dropout(
-            inputs=inp, rate=0.4, training=is_train)
-        logits = tf.reduce_max(dropout, axis=[1,2])
-        # print(dropout.shape)
-        # logits = tf.layers.max_pooling2d(dropout, pool_size=[h,w], strides=[h,w])
-        # logits = tf.reshape(logits, (b,n_classes))
-        #### fixed scale
-        # dense = tf.layers.conv2d(inp, filters[-1], kernel_size=(h,w), padding='valid') # 1,1,c
-        # dense = tf.reshape(dense, (b,-1))
+        # fcn
+        # inp = tf.layers.conv2d(inp, n_classes, kernel_size=1, padding='valid')  # h,w,10
         # dropout = tf.layers.dropout(
-        #     inputs=dense, rate=0.4, training=is_train)
-        # # dropout = dense
-        # logits = tf.layers.dense(inputs=dropout, units=n_classes, name='logits')
+        #     inputs=inp, rate=0.4, training=is_train)
+        # logits = tf.reduce_max(dropout, axis=[1,2])
+        #### fixed scale
+        dense = tf.layers.conv2d(inp, filters[-1], kernel_size=(h,w), padding='valid') # 1,1,c
+        dense = tf.reshape(dense, (b,-1))
+        dropout = tf.layers.dropout(
+            inputs=dense, rate=0.4, training=is_train)
+        logits = tf.layers.dense(inputs=dropout, units=n_classes, name='logits')
         return logits,cols
 
 class FT(Model):
