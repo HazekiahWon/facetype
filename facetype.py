@@ -114,7 +114,7 @@ class FT(Model):
                 im = read_image(p)
                 if im.ndim<3: im = np.stack(3*(im,),axis=-1)
                 elif im.shape[-1]>3: im = im[:,:,:3]
-                # im = resize_image(im, (self.h,self.w), set_int=False)
+                im = resize_image(im, (self.h,self.w), set_int=False)
 
                 yield p,im.astype(np.float32),c
 
