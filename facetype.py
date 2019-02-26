@@ -102,7 +102,7 @@ class FT(Model):
         # iter_fn
         df = pd.read_csv(data_file, usecols=['path', 'class']).values
         np.random.shuffle(df)
-        df = df[:batchsize * 10]
+        df = df[:floor_by(df.shape[0],batchsize)]
         xtable = df
         # force the readed image to be 3 in dim3
         def iter_fn():
