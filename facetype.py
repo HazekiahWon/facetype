@@ -1,6 +1,10 @@
+import sys
+sys.path.append(r'..')
+print(sys.path)
 from helios.pipeline import *
 from helios.tools import get_shape, floor_by
 from helios.image import read_image, rgb2ycbcr, resize_image
+
 # from exp import stats
 class FTConfig(Config):
     def __init__(self):
