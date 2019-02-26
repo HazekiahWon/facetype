@@ -121,8 +121,10 @@ class FT(Model):
         # input_format, types shapes, etc
         input_format = ['path','img','cls']
         types = dict(path=tf.string, img=tf.float32,cls=tf.int32)
-        shapes = dict(path=(), img=(None,None,3),cls=())
-        pad_shapes = dict(path=(), img=(None,None,3), cls=())
+        # shapes = dict(path=(), img=(None,None,3),cls=())
+        # pad_shapes = dict(path=(), img=(None,None,3), cls=())
+        shapes = dict(path=(), img=(self.h,self.w, 3), cls=())
+        pad_shapes = dict(path=(), img=(self.h, self.w, 3), cls=())
         pad_values = dict(path='', img=0., cls=0)
         iterator = super().construct_dataset(iter_fn, input_format, shapes,
                                   types, pad_shapes, pad_values, batch_size=batchsize)
