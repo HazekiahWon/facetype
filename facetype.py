@@ -258,7 +258,6 @@ class FT(Model):
             return pred_col
         def after_epoch(init, iters):
             pred_col = init
-            print(pred_col)
             # rlen = len(self.xtable)
             # try to make sure they are of same length
             pred = np.concatenate(pred_col).reshape((-1,1))
