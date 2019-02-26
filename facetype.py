@@ -1,6 +1,6 @@
 import sys
 sys.path.append(r'..')
-print(sys.path)
+# print(sys.path)
 from helios.pipeline import *
 from helios.tools import get_shape, floor_by
 from helios.image import read_image, rgb2ycbcr, resize_image
@@ -100,12 +100,13 @@ class FT(Model):
 
     def construct_dataset(self, batchsize, data_file):
         # iter_fn
+        df = pd.read_csv(data_file, usecols=['path', 'class']).values
+        np.random.shuffle(df)
+        df = df[:batchsize * 10]
+        xtable = df
+        # force the readed image to be 3 in dim3
         def iter_fn():
-            df = pd.read_csv(data_file, usecols=['path','class']).values
-            np.random.shuffle(df)
-            df = df[:floor_by(df.shape[0], batchsize)]
-            self.xtable = df
-            # force the readed image to be 3 in dim3
+
             for p,c in df:
                 im = read_image(p)
                 if im.ndim<3: im = np.stack(3*(im,),axis=-1)
@@ -122,7 +123,7 @@ class FT(Model):
         pad_values = dict(path='', img=0., cls=0)
         iterator = super().construct_dataset(iter_fn, input_format, shapes,
                                   types, pad_shapes, pad_values, batch_size=batchsize)
-        return iterator
+        return iterator,xtable
 
     def debug_ds(self):
         seed = 233333
@@ -205,13 +206,13 @@ class FT(Model):
         self.summ = tf.summary.merge(all)
 
     def prepare_val(self):
-        self.val_iterator = self.construct_dataset(self.batch_size, self.eval_data_file)
+        self.val_iterator,self.val_xtable = self.construct_dataset(1, self.eval_data_file)
         self.val_pred = self._build_model_multi(self.val_iterator, is_train=False)
 
     def prepare_train_mode(self, seed=None):
         self.set_seed(seed)
         self.save_settings()
-        self.train_iterator = self.construct_dataset(self.batch_size, self.data_file)
+        self.train_iterator,self.train_xtable = self.construct_dataset(self.batch_size, self.data_file)
         self.xent, self.pred = self._build_model_multi(self.train_iterator, is_train=True)
         self._build_summaries()
 
@@ -232,17 +233,12 @@ class FT(Model):
             return pred_col
         def after_epoch(init, iters):
             pred_col= init
-            # rlen = len(self.xtable)
-            # try to make sure they are of same length
             pred = np.concatenate(pred_col).reshape((-1,1))
-            # false = np.concatenate(false_col)
-            # acc = 1-np.mean(false)
-
-            # print(self.xtable.shape, pred.shape)
-            xytable = np.concatenate((self.xtable,pred), axis=1)
+            xytable = np.concatenate((self.train_xtable,pred), axis=1)
             acc = np.mean(xytable[:,-1]==xytable[:,-2])
             self.prompt(f'the overall acc is {acc}.', 2)
             pd.DataFrame(xytable, columns=['path','class','pred']).to_csv(self.train_report_path, index=False)
+            self.prompt('== evaluating ==')
             acc = self.evaluate()
             self.save(str(acc)[:5], iters)
         self.train_template(self.train_iterator, self.run_epoch, before_run, prepare_nodes, after_run, after_epoch)
@@ -251,27 +247,28 @@ class FT(Model):
         def before_run():
             return list()
         def prepare_nodes(iters):
-            return self.pred
+            return self.val_pred
         def after_run(iters, init, sess_ret, elapsed):
             b_pred = sess_ret # make sure batchsize only 1
             pred_col = init
             pred_col.append(b_pred)
             # false_col.append(b_false)
-            self.prompt(f'iter {iters} elapsed {elapsed} with xent {m_xent}.',2)
+            self.prompt(f'iter {iters} elapsed {elapsed}.',2)
 
             return pred_col
         def after_epoch(init, iters):
-            pred_col= init
+            pred_col = init
+            print(pred_col)
             # rlen = len(self.xtable)
             # try to make sure they are of same length
             pred = np.concatenate(pred_col).reshape((-1,1))
             # false = np.concatenate(false_col)
             # acc = 1-np.mean(false)
 
-            # print(self.xtable.shape, pred.shape)
-            xytable = np.concatenate((self.xtable,pred), axis=1)
+            print(self.val_xtable.shape, pred.shape)
+            xytable = np.concatenate((self.val_xtable,pred), axis=1)
             acc = np.mean(xytable[:,-1]==xytable[:,-2])
-            self.prompt(f'the overall acc is {acc}.', 2)
+            self.prompt(f'the eval overall acc is {acc}.', 2)
             pd.DataFrame(xytable, columns=['path','class','pred']).to_csv(self.eval_report_path, index=False)
             return acc
 
