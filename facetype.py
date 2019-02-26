@@ -11,13 +11,13 @@ class FTConfig(Config):
         super().__init__(
             batch_size=4,
             run_epoch=50,
-            train_data_dir=r'D:\facetype\脸型',
-            val_data_dir=r'D:\facetype\脸型',
+            train_data_dir=r'脸型',
+            val_data_dir=r'脸型',
             save_iters_freq=None,
             summ_iters_freq=25,
             starter_lr=1e-3,
             max_norm=10.,
-            dir4allexp=r'D:\facetype\exp',
+            dir4allexp=r'exp',
             restore_exp=None,
             restore_ckpt=None
         )
@@ -92,8 +92,8 @@ class Prototype:
 class FT(Model):
     def __init__(self, config):
         super().__init__('facetype', config)
-        self.data_file = r'D:\facetype\trainset.csv'
-        self.eval_data_file = r'D:\facetype\valset.csv'
+        self.data_file = r'trainset.csv'
+        self.eval_data_file = r'valset.csv'
         self.n_classes = config.n_classes
         self.net_configs = dict(filters=[(32,3)]*10+[64], n_classes=self.n_classes)
         self.h,self.w = config.h,config.w
