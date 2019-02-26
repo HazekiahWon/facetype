@@ -82,7 +82,10 @@ class Prototype:
         inp = tf.layers.conv2d(inp, n_classes, kernel_size=1, padding='valid')  # h,w,10
         dropout = tf.layers.dropout(
             inputs=inp, rate=0.4, training=is_train)
-        logits = tf.layers.max_pooling2d(dropout, pool_size=[h,w], strides=[h,w])
+        logits = tf.reduce_max(dropout, axis=[1,2])
+        # print(dropout.shape)
+        # logits = tf.layers.max_pooling2d(dropout, pool_size=[h,w], strides=[h,w])
+        # logits = tf.reshape(logits, (b,n_classes))
         #### fixed scale
         # dense = tf.layers.conv2d(inp, filters[-1], kernel_size=(h,w), padding='valid') # 1,1,c
         # dense = tf.reshape(dense, (b,-1))
@@ -114,15 +117,15 @@ class FT(Model):
                 im = read_image(p)
                 if im.ndim<3: im = np.stack(3*(im,),axis=-1)
                 elif im.shape[-1]>3: im = im[:,:,:3]
-                im = resize_image(im, (self.h,self.w), set_int=False)
+                # im = resize_image(im, (self.h,self.w), set_int=False)
 
                 yield p,im.astype(np.float32),c
 
         # input_format, types shapes, etc
         input_format = ['path','img','cls']
         types = dict(path=tf.string, img=tf.float32,cls=tf.int32)
-        shapes = dict(path=(), img=(self.h,self.w,3),cls=())
-        pad_shapes = dict(path=(), img=(self.h,self.w,3), cls=())
+        shapes = dict(path=(), img=(None,None,3),cls=())
+        pad_shapes = dict(path=(), img=(None,None,3), cls=())
         pad_values = dict(path='', img=0., cls=0)
         iterator = super().construct_dataset(iter_fn, input_format, shapes,
                                   types, pad_shapes, pad_values, batch_size=batchsize)
